@@ -2,10 +2,7 @@ const puppeteer = require('puppeteer');
 const { expect } = require('chai');
 const {
     clickElement,
-    isActive,
     isVisible,
-    getText,
-    clickByText,
 } = require('./lib/commands');
 
 // Global browser setup
@@ -24,6 +21,7 @@ beforeAll(async () => {
 beforeEach(async () => {
     page = await browser.newPage();
     await page.setDefaultNavigationTimeout(30000);
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 });
 
 afterEach(async () => {
@@ -86,9 +84,9 @@ describe('Бронирование билетов в веб-приложении
         await page.goto('http://qamid.tmweb.ru/client/index.php', { timeout: 30000 });
         // Выбираем завтрашний день
         await clickElement(page, 'a:nth-child(2)');
-        // Находим сеанс на 20:00
-        const session = await page.$x("//a[contains(@class, 'movie-seances__time') and contains(text(), '20:00')]");
-        await session[0].click();
+        // Находим VIP зал для "Ведьмака" и кликаем по времени 20:00
+        const vipHall = await page.$x("//h3[contains(@class, 'movie-seances__hall-title') and contains(text(), 'Вип зал')]/following-sibling::ul/li/a[contains(@class, 'movie-seances__time') and contains(text(), '20:00')]");
+        await vipHall[0].click();
 
         const expectedStateButton = true;
         const expectedTextButton = 'Забронировать';
@@ -97,18 +95,14 @@ describe('Бронирование билетов в веб-приложении
         const seats = await page.$$(selectorNotTaken);
         await seats[0].click();
         await seats[1].click();
-
         const actualState = await isActive(page, '.acceptin-button');
         const actualText = await getText(page, '.acceptin-button');
         expect(actualState).to.equal(expectedStateButton);
         expect(actualText).to.equal(expectedTextButton);
-
         await clickElement(page, '.acceptin-button');
         await clickElement(page, '.acceptin-button');
-
         const qrVisible = await isVisible(page, 'img.ticket__info-qr');
         expect(qrVisible).to.be.true;
-
         const hintNodes = await page.$$('.ticket__hint');
         const hintTexts = await Promise.all(hintNodes.map(node => node.evaluate(el => el.textContent)));
         expect(hintTexts.some(text => text.includes('Покажите QR-код нашему контроллеру для подтверждения бронирования.'))).to.be.true;
@@ -120,9 +114,9 @@ describe('Бронирование билетов в веб-приложении
         await page.goto('http://qamid.tmweb.ru/client/index.php', { timeout: 30000 });
         // Выбираем завтрашний день
         await clickElement(page, 'a:nth-child(2)');
-        // Находим сеанс на 11:00
-        const session = await page.$x("//a[contains(@class, 'movie-seances__time') and contains(text(), '11:00')]");
-        await session[0].click();
+        // Находим Красивый зал для "Микки Мауса" и кликаем по времени 11:00
+        const prettyHall = await page.$x("//h3[contains(@class, 'movie-seances__hall-title') and contains(text(), 'Красивый зал')]/following-sibling::ul/li/a[contains(@class, 'movie-seances__time') and contains(text(), '11:00')]");
+        await prettyHall[0].click();
 
         await page.waitForSelector('.buying-scheme__chair_taken');
         const takenSeats = await page.$$('.buying-scheme__chair_taken');
