@@ -3,6 +3,8 @@ const { expect } = require('chai');
 const {
     clickElement,
     isVisible,
+    isActive,
+    getText
 } = require('./lib/commands');
 
 // Global browser setup
